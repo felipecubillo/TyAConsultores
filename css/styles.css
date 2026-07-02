@@ -32,7 +32,7 @@
 * { box-sizing: border-box; }
 html {
     scroll-behavior: smooth;
-    scroll-padding-top: 68px;
+    scroll-padding-top: 62px;
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
