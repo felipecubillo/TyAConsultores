@@ -1,50 +1,56 @@
-// =========================================================
-// T&A CONSULTORES — script.js
-// =========================================================
-
 document.addEventListener("DOMContentLoaded", function () {
 
   /* ---------- Menú móvil ---------- */
   var navToggle = document.getElementById("nav-toggle");
-  var mainNav = document.getElementById("main-nav");
+  var mainNav   = document.getElementById("main-nav");
+
+  function closeNav() {
+    mainNav.classList.remove("is-open");
+    navToggle.setAttribute("aria-expanded", "false");
+    navToggle.classList.remove("is-active");
+  }
+
+  function openNav() {
+    mainNav.classList.add("is-open");
+    navToggle.setAttribute("aria-expanded", "true");
+    navToggle.classList.add("is-active");
+  }
 
   if (navToggle && mainNav) {
     navToggle.addEventListener("click", function () {
-      var isOpen = mainNav.classList.toggle("is-open");
-      navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      mainNav.classList.contains("is-open") ? closeNav() : openNav();
     });
 
-    // Cierra el menú al elegir una opción (en móvil)
+    // Cierra al hacer clic en un enlace
     mainNav.querySelectorAll("a").forEach(function (link) {
-      link.addEventListener("click", function () {
-        mainNav.classList.remove("is-open");
-        navToggle.setAttribute("aria-expanded", "false");
-      });
+      link.addEventListener("click", closeNav);
     });
+
+    // Cierra al hacer scroll hacia abajo
+    var lastScrollY = window.scrollY;
+    window.addEventListener("scroll", function () {
+      if (window.scrollY > lastScrollY + 10) closeNav();
+      lastScrollY = window.scrollY;
+    }, { passive: true });
   }
 
   /* ---------- Header: sombra al hacer scroll ---------- */
   var header = document.querySelector(".site-header");
-  var lastScroll = 0;
 
   window.addEventListener("scroll", function () {
-    var current = window.scrollY;
     if (header) {
-      header.style.boxShadow = current > 8
-        ? "0 1px 0 rgba(11,31,58,0.08)"
+      header.style.boxShadow = window.scrollY > 8
+        ? "0 2px 12px rgba(13,31,38,0.10)"
         : "none";
     }
-    lastScroll = current;
   }, { passive: true });
 
   /* ---------- Scroll reveal ---------- */
   var revealTargets = document.querySelectorAll(
-    ".section-head, .service-block, .col-content, .col-label, .clients-group"
+    ".section-head, .service-block, .col-content, .col-label, .clients-group, .vendii-card"
   );
 
-  revealTargets.forEach(function (el) {
-    el.classList.add("reveal");
-  });
+  revealTargets.forEach(function (el) { el.classList.add("reveal"); });
 
   if ("IntersectionObserver" in window) {
     var observer = new IntersectionObserver(function (entries) {
@@ -54,39 +60,31 @@ document.addEventListener("DOMContentLoaded", function () {
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.1 });
 
-    revealTargets.forEach(function (el) {
-      observer.observe(el);
-    });
+    revealTargets.forEach(function (el) { observer.observe(el); });
   } else {
-    // Fallback: sin soporte para IntersectionObserver, mostrar todo
-    revealTargets.forEach(function (el) {
-      el.classList.add("is-visible");
-    });
+    revealTargets.forEach(function (el) { el.classList.add("is-visible"); });
   }
 
   /* ---------- Formulario de contacto ---------- */
-  var form = document.getElementById("contact-form");
+  var form   = document.getElementById("contact-form");
   var status = document.getElementById("form-status");
 
   if (form && status) {
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
 
-      var nombre = form.nombre.value.trim();
-      var correo = form.correo.value.trim();
+      var nombre  = form.nombre.value.trim();
+      var correo  = form.correo.value.trim();
       var mensaje = form.mensaje.value.trim();
+      var empresa = form.empresa.value.trim();
 
       if (!nombre || !correo || !mensaje) {
         status.textContent = "Por favor complete los campos obligatorios.";
         return;
       }
 
-      // Construye un mailto: como entrega simple sin backend.
-      // Si en el futuro se conecta un servicio de envío (Formspree, backend propio, etc.),
-      // sustituir este bloque por la llamada correspondiente.
-      var empresa = form.empresa.value.trim();
       var asunto = encodeURIComponent("Contacto desde el sitio web — " + nombre);
       var cuerpo = encodeURIComponent(
         "Nombre: " + nombre + "\n" +
@@ -95,9 +93,10 @@ document.addEventListener("DOMContentLoaded", function () {
         "Mensaje:\n" + mensaje
       );
 
-      window.location.href = "mailto:contacto@tyaconsultoresca.com?subject=" + asunto + "&body=" + cuerpo;
+      window.location.href =
+        "mailto:contacto@tyaconsultoresca.com?subject=" + asunto + "&body=" + cuerpo;
 
-      status.textContent = "Abriendo su cliente de correo para enviar el mensaje...";
+      status.textContent = "Abriendo su cliente de correo...";
     });
   }
 
