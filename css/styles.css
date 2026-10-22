@@ -151,6 +151,12 @@ img { max-width: 100%; display: block; }
 
 .logo-dot { color: var(--accent); }
 
+.logo-img {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+
 .nav {
   display: flex;
   align-items: center;
