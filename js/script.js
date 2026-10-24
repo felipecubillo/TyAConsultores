@@ -47,7 +47,131 @@
   }
 
   /* -------------------------------------------------------
-     2. BOTÓN VOLVER ARRIBA — "back-top"
+     2. CANVAS DE PARTÍCULAS en el hero
+  ------------------------------------------------------- */
+  var canvas = document.getElementById("hero-canvas");
+
+  if (canvas) {
+    var ctx = canvas.getContext("2d");
+    var particles = [];
+    var PARTICLE_COUNT = 60;
+
+    function resizeCanvas() {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+
+    function createParticle() {
+      return {
+        x:     Math.random() * canvas.width,
+        y:     Math.random() * canvas.height,
+        r:     Math.random() * 1.5 + 0.3,
+        vx:    (Math.random() - 0.5) * 0.4,
+        vy:    (Math.random() - 0.5) * 0.4,
+        alpha: Math.random() * 0.5 + 0.1
+      };
+    }
+
+    function initParticles() {
+      particles = [];
+      for (var i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(createParticle());
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(function (p) {
+        // Mover
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Rebotar en bordes
+        if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        // Dibujar punto
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(108, 99, 255, " + p.alpha + ")";
+        ctx.fill();
+      });
+
+      // Conectar puntos cercanos
+      for (var i = 0; i < particles.length; i++) {
+        for (var j = i + 1; j < particles.length; j++) {
+          var dx   = particles[i].x - particles[j].x;
+          var dy   = particles[i].y - particles[j].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = "rgba(108, 99, 255, " + (0.08 * (1 - dist / 120)) + ")";
+            ctx.lineWidth   = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(drawParticles);
+    }
+
+    // Estilos del canvas
+    canvas.style.position = "absolute";
+    canvas.style.inset     = "0";
+    canvas.style.width     = "100%";
+    canvas.style.height    = "100%";
+    canvas.style.zIndex    = "0";
+    canvas.style.pointerEvents = "none";
+
+    resizeCanvas();
+    initParticles();
+    drawParticles();
+
+    window.addEventListener("resize", function () {
+      resizeCanvas();
+      initParticles();
+    }, { passive: true });
+  }
+
+  /* -------------------------------------------------------
+     2b. CONTADOR ANIMADO en los stats del hero
+  ------------------------------------------------------- */
+  var countEls = document.querySelectorAll("[data-count]");
+
+  if ("IntersectionObserver" in window && countEls.length) {
+    var countObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el     = entry.target;
+        var target = parseInt(el.getAttribute("data-count"), 10);
+        var start  = 0;
+        var dur    = 1800;
+        var step   = 16;
+        var inc    = target / (dur / step);
+
+        var timer = setInterval(function () {
+          start += inc;
+          if (start >= target) {
+            el.textContent = target;
+            clearInterval(timer);
+          } else {
+            el.textContent = Math.floor(start);
+          }
+        }, step);
+
+        countObs.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+
+    countEls.forEach(function (el) { countObs.observe(el); });
+  }
+
+  /* -------------------------------------------------------
+     3. BOTÓN VOLVER ARRIBA — "back-top"
   ------------------------------------------------------- */
   var backTop = document.getElementById("back-top");
 
