@@ -1,407 +1,736 @@
+
 /* =========================================================
-   FELIPE — script.js
+   GF DIGITAL — SCRIPT PRINCIPAL
+   Menú, navegación, animaciones y formulario
    ========================================================= */
+
 (function () {
   "use strict";
 
-  /* -------------------------------------------------------
-     1. MENÚ MÓVIL con animación hamburguesa
-  ------------------------------------------------------- */
-  var burger = document.getElementById("burger");
-  var nav    = document.getElementById("nav");
+  /* =======================================================
+     CONFIGURACIÓN
+     ======================================================= */
 
-  function openMenu() {
+  // Reemplazá este correo por el correo real de contacto.
+  var EMAIL_CONTACTO = "tucorreo@email.com";
+
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+
+  /* =======================================================
+     1. MENÚ MÓVIL
+     ======================================================= */
+
+  var burger = document.getElementById("burger");
+  var nav = document.getElementById("nav");
+
+  function abrirMenu() {
+    if (!burger || !nav) {
+      return;
+    }
+
     nav.classList.add("is-open");
     burger.classList.add("is-active");
     burger.setAttribute("aria-expanded", "true");
-    document.body.style.overflow = "hidden";
+    burger.setAttribute("aria-label", "Cerrar menú");
   }
 
-  function closeMenu() {
+  function cerrarMenu() {
+    if (!burger || !nav) {
+      return;
+    }
+
     nav.classList.remove("is-open");
     burger.classList.remove("is-active");
     burger.setAttribute("aria-expanded", "false");
-    document.body.style.overflow = "";
+    burger.setAttribute("aria-label", "Abrir menú");
   }
 
   if (burger && nav) {
     burger.addEventListener("click", function () {
-      nav.classList.contains("is-open") ? closeMenu() : openMenu();
+      if (nav.classList.contains("is-open")) {
+        cerrarMenu();
+      } else {
+        abrirMenu();
+      }
     });
 
     nav.querySelectorAll("a").forEach(function (link) {
-      link.addEventListener("click", closeMenu);
-    });
-
-    // Cierra al hacer scroll hacia abajo
-    var lastY = window.scrollY;
-    window.addEventListener("scroll", function () {
-      if (window.scrollY > lastY + 20) closeMenu();
-      lastY = window.scrollY;
-    }, { passive: true });
-
-    // Cierra con ESC
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") closeMenu();
-    });
-  }
-
-  /* -------------------------------------------------------
-     2. CANVAS DE PARTÍCULAS en el hero
-  ------------------------------------------------------- */
-  var canvas = document.getElementById("hero-canvas");
-
-  if (canvas) {
-    var ctx = canvas.getContext("2d");
-    var particles = [];
-    var PARTICLE_COUNT = 60;
-
-    function resizeCanvas() {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    }
-
-    function createParticle() {
-      return {
-        x:     Math.random() * canvas.width,
-        y:     Math.random() * canvas.height,
-        r:     Math.random() * 1.5 + 0.3,
-        vx:    (Math.random() - 0.5) * 0.4,
-        vy:    (Math.random() - 0.5) * 0.4,
-        alpha: Math.random() * 0.5 + 0.1
-      };
-    }
-
-    function initParticles() {
-      particles = [];
-      for (var i = 0; i < PARTICLE_COUNT; i++) {
-        particles.push(createParticle());
-      }
-    }
-
-    function drawParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach(function (p) {
-        // Mover
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Rebotar en bordes
-        if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        // Dibujar punto
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(108, 99, 255, " + p.alpha + ")";
-        ctx.fill();
+      link.addEventListener("click", function () {
+        cerrarMenu();
       });
+    });
 
-      // Conectar puntos cercanos
-      for (var i = 0; i < particles.length; i++) {
-        for (var j = i + 1; j < particles.length; j++) {
-          var dx   = particles[i].x - particles[j].x;
-          var dy   = particles[i].y - particles[j].y;
-          var dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = "rgba(108, 99, 255, " + (0.08 * (1 - dist / 120)) + ")";
-            ctx.lineWidth   = 0.5;
-            ctx.stroke();
-          }
-        }
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        cerrarMenu();
       }
+    });
 
-      requestAnimationFrame(drawParticles);
-    }
-
-    // Estilos del canvas
-    canvas.style.position = "absolute";
-    canvas.style.inset     = "0";
-    canvas.style.width     = "100%";
-    canvas.style.height    = "100%";
-    canvas.style.zIndex    = "0";
-    canvas.style.pointerEvents = "none";
-
-    resizeCanvas();
-    initParticles();
-    drawParticles();
+    document.addEventListener("click", function (event) {
+      if (
+        nav.classList.contains("is-open") &&
+        !nav.contains(event.target) &&
+        !burger.contains(event.target)
+      ) {
+        cerrarMenu();
+      }
+    });
 
     window.addEventListener("resize", function () {
-      resizeCanvas();
-      initParticles();
-    }, { passive: true });
-  }
-
-  /* -------------------------------------------------------
-     2b. CONTADOR ANIMADO en los stats del hero
-  ------------------------------------------------------- */
-  var countEls = document.querySelectorAll("[data-count]");
-
-  if ("IntersectionObserver" in window && countEls.length) {
-    var countObs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        var el     = entry.target;
-        var target = parseInt(el.getAttribute("data-count"), 10);
-        var start  = 0;
-        var dur    = 1800;
-        var step   = 16;
-        var inc    = target / (dur / step);
-
-        var timer = setInterval(function () {
-          start += inc;
-          if (start >= target) {
-            el.textContent = target;
-            clearInterval(timer);
-          } else {
-            el.textContent = Math.floor(start);
-          }
-        }, step);
-
-        countObs.unobserve(el);
-      });
-    }, { threshold: 0.5 });
-
-    countEls.forEach(function (el) { countObs.observe(el); });
-  }
-
-  /* -------------------------------------------------------
-     3. BOTÓN VOLVER ARRIBA — "back-top"
-  ------------------------------------------------------- */
-  var backTop = document.getElementById("back-top");
-
-  if (backTop) {
-    backTop.addEventListener("click", function (e) {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (window.innerWidth > 768) {
+        cerrarMenu();
+      }
     });
   }
 
-  /* -------------------------------------------------------
-     3. HEADER — sombra al hacer scroll
-  ------------------------------------------------------- */
+
+  /* =======================================================
+     2. AÑO AUTOMÁTICO DEL FOOTER
+     ======================================================= */
+
+  var currentYear = document.getElementById("current-year");
+
+  if (currentYear) {
+    currentYear.textContent = new Date().getFullYear();
+  }
+
+
+  /* =======================================================
+     3. HEADER: EFECTO AL DESPLAZARSE
+     ======================================================= */
+
   var header = document.querySelector(".header");
 
-  window.addEventListener("scroll", function () {
-    if (!header) return;
-    header.style.boxShadow = window.scrollY > 10
-      ? "0 4px 24px rgba(0,0,0,0.4)"
-      : "none";
-  }, { passive: true });
+  function actualizarHeader() {
+    if (!header) {
+      return;
+    }
 
-  /* -------------------------------------------------------
-     4. NAV ACTIVO — resalta el enlace de la sección visible
-  ------------------------------------------------------- */
+    if (window.scrollY > 10) {
+      header.style.boxShadow = "0 8px 28px rgba(0, 0, 0, 0.28)";
+      header.style.background = "rgba(10, 10, 15, 0.96)";
+    } else {
+      header.style.boxShadow = "none";
+      header.style.background = "rgba(10, 10, 15, 0.88)";
+    }
+  }
+
+  window.addEventListener("scroll", actualizarHeader, {
+    passive: true
+  });
+
+  actualizarHeader();
+
+
+  /* =======================================================
+     4. NAVEGACIÓN ACTIVA
+     ======================================================= */
+
   var navLinks = document.querySelectorAll(".nav a[href^='#']");
-  var sections = [];
+  var navSections = [];
 
   navLinks.forEach(function (link) {
-    var id  = link.getAttribute("href").slice(1);
-    var sec = document.getElementById(id);
-    if (sec) sections.push({ link: link, section: sec });
-  });
+    var href = link.getAttribute("href");
 
-  function updateActiveNav() {
-    var scrollY = window.scrollY + 120;
-    var active  = null;
+    if (!href || href.length < 2) {
+      return;
+    }
 
-    sections.forEach(function (item) {
-      if (item.section.offsetTop <= scrollY) active = item;
-    });
+    var section = document.getElementById(href.substring(1));
 
-    navLinks.forEach(function (l) { l.classList.remove("nav-active"); });
-    if (active) active.link.classList.add("nav-active");
-  }
-
-  window.addEventListener("scroll", updateActiveNav, { passive: true });
-  updateActiveNav();
-
-  /* -------------------------------------------------------
-     5. TABS — Cómo funciona
-  ------------------------------------------------------- */
-  var tabBtns     = document.querySelectorAll(".tab-btn");
-  var tabContents = document.querySelectorAll(".tab-content");
-
-  tabBtns.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var target = btn.getAttribute("data-tab");
-
-      tabBtns.forEach(function (b) { b.classList.remove("active"); });
-      tabContents.forEach(function (c) { c.classList.remove("active"); });
-
-      btn.classList.add("active");
-      var content = document.getElementById("tab-" + target);
-      if (content) content.classList.add("active");
-    });
-  });
-
-  /* -------------------------------------------------------
-     6. WHATSAPP FLOAT — aparece después de 3 segundos
-  ------------------------------------------------------- */
-  var waFloat = document.getElementById("wa-float");
-
-  if (waFloat) {
-    setTimeout(function () {
-      waFloat.classList.add("visible");
-    }, 3000);
-  }
-
-  /* -------------------------------------------------------
-     7. SCROLL REVEAL — entradas suaves al hacer scroll
-  ------------------------------------------------------- */
-  var revealEls = document.querySelectorAll(
-    ".service-card, .step, .portfolio-item, .price-card, .section-title, .section-sub"
-  );
-
-  revealEls.forEach(function (el) {
-    el.style.opacity    = "0";
-    el.style.transform  = "translateY(20px)";
-    el.style.transition = "opacity 0.55s ease, transform 0.55s ease";
-  });
-
-  if ("IntersectionObserver" in window) {
-    var revealObs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          // Delay escalonado para grupos de elementos
-          var siblings = Array.from(entry.target.parentElement.children);
-          var idx      = siblings.indexOf(entry.target);
-          setTimeout(function () {
-            entry.target.style.opacity   = "1";
-            entry.target.style.transform = "translateY(0)";
-          }, idx * 80);
-          revealObs.unobserve(entry.target);
-        }
+    if (section) {
+      navSections.push({
+        link: link,
+        section: section
       });
-    }, { threshold: 0.1 });
-
-    revealEls.forEach(function (el) { revealObs.observe(el); });
-  } else {
-    revealEls.forEach(function (el) {
-      el.style.opacity   = "1";
-      el.style.transform = "translateY(0)";
-    });
-  }
-
-  /* -------------------------------------------------------
-     8. FORMULARIO DE CONTACTO — validación por campo
-  ------------------------------------------------------- */
-  var form      = document.getElementById("contact-form");
-  var btnSubmit = document.getElementById("btn-submit");
-  var statusEl  = document.getElementById("form-status");
-
-  var fields = {
-    nombre:  { el: document.getElementById("nombre"),  err: document.getElementById("err-nombre"),  msg: "Por favor ingresá tu nombre." },
-    correo:  { el: document.getElementById("correo"),  err: document.getElementById("err-correo"),  msg: "Ingresá un correo válido." },
-    mensaje: { el: document.getElementById("mensaje"), err: document.getElementById("err-mensaje"), msg: "Escribí tu mensaje antes de enviar." }
-  };
-
-  function validateEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  function clearError(field) {
-    field.err.textContent = "";
-    field.el.style.borderColor = "";
-  }
-
-  function showError(field, msg) {
-    field.err.textContent    = msg || field.msg;
-    field.el.style.borderColor = "#FF6B6B";
-  }
-
-  function validateField(key) {
-    var f = fields[key];
-    if (!f) return true;
-    var val = f.el.value.trim();
-
-    if (!val) { showError(f); return false; }
-    if (key === "correo" && !validateEmail(val)) { showError(f, "Ingresá un correo válido."); return false; }
-    clearError(f);
-    return true;
-  }
-
-  // Validación en tiempo real al salir de cada campo
-  Object.keys(fields).forEach(function (key) {
-    var f = fields[key];
-    if (!f.el) return;
-
-    f.el.addEventListener("blur", function () { validateField(key); });
-    f.el.addEventListener("input", function () {
-      if (f.err.textContent) validateField(key);
-    });
+    }
   });
 
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
+  function actualizarNavegacion() {
+    var position = window.scrollY + 150;
+    var current = null;
 
-      var valid = true;
-      Object.keys(fields).forEach(function (key) {
-        if (!validateField(key)) valid = false;
-      });
+    navSections.forEach(function (item) {
+      if (item.section.offsetTop <= position) {
+        current = item;
+      }
+    });
 
-      if (!valid) {
-        statusEl.textContent = "Por favor corregí los errores antes de enviar.";
-        statusEl.style.color = "#FF6B6B";
+    navLinks.forEach(function (link) {
+      link.classList.remove("nav-active");
+    });
+
+    if (current) {
+      current.link.classList.add("nav-active");
+    }
+  }
+
+  window.addEventListener("scroll", actualizarNavegacion, {
+    passive: true
+  });
+
+  actualizarNavegacion();
+
+
+  /* =======================================================
+     5. DESPLAZAMIENTO SUAVE
+     ======================================================= */
+
+  function desplazarseA(elemento) {
+    if (!elemento) {
+      return;
+    }
+
+    var headerHeight = header ? header.offsetHeight : 0;
+    var margen = 16;
+
+    var top =
+      elemento.getBoundingClientRect().top +
+      window.scrollY -
+      headerHeight -
+      margen;
+
+    window.scrollTo({
+      top: Math.max(0, top),
+      behavior: reduceMotion ? "auto" : "smooth"
+    });
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+    anchor.addEventListener("click", function (event) {
+      var href = anchor.getAttribute("href");
+
+      if (!href || href === "#") {
+        event.preventDefault();
+
+        window.scrollTo({
+          top: 0,
+          behavior: reduceMotion ? "auto" : "smooth"
+        });
+
         return;
       }
 
-      // Deshabilitar botón mientras "envía"
-      btnSubmit.disabled    = true;
-      btnSubmit.textContent = "Enviando...";
-      statusEl.textContent  = "";
+      var target = document.querySelector(href);
 
-      var nombre  = fields.nombre.el.value.trim();
-      var correo  = fields.correo.el.value.trim();
-      var mensaje = fields.mensaje.el.value.trim();
-      var servicio = document.getElementById("servicio")
-        ? document.getElementById("servicio").value
+      if (!target) {
+        return;
+      }
+
+      event.preventDefault();
+      desplazarseA(target);
+    });
+  });
+
+
+  /* =======================================================
+     6. BOTÓN VOLVER ARRIBA
+     ======================================================= */
+
+  var backTop = document.getElementById("back-top");
+
+  if (backTop) {
+    backTop.addEventListener("click", function (event) {
+      event.preventDefault();
+
+      window.scrollTo({
+        top: 0,
+        behavior: reduceMotion ? "auto" : "smooth"
+      });
+    });
+  }
+
+
+  /* =======================================================
+     7. CANVAS: PARTÍCULAS DEL HERO
+     ======================================================= */
+
+  var canvas = document.getElementById("hero-canvas");
+
+  if (canvas && !reduceMotion) {
+    var ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      var particles = [];
+      var particleCount = window.innerWidth <= 768 ? 30 : 55;
+      var animationFrame = null;
+      var canvasWidth = 0;
+      var canvasHeight = 0;
+
+      function ajustarCanvas() {
+        var rect = canvas.getBoundingClientRect();
+        var pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvasWidth = rect.width;
+        canvasHeight = rect.height;
+
+        canvas.width = Math.floor(canvasWidth * pixelRatio);
+        canvas.height = Math.floor(canvasHeight * pixelRatio);
+
+        ctx.setTransform(
+          pixelRatio,
+          0,
+          0,
+          pixelRatio,
+          0,
+          0
+        );
+      }
+
+      function crearParticula() {
+        return {
+          x: Math.random() * canvasWidth,
+          y: Math.random() * canvasHeight,
+          radius: Math.random() * 1.3 + 0.4,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          alpha: Math.random() * 0.35 + 0.12
+        };
+      }
+
+      function iniciarParticulas() {
+        particles = [];
+
+        for (var i = 0; i < particleCount; i++) {
+          particles.push(crearParticula());
+        }
+      }
+
+      function dibujarParticulas() {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        for (var i = 0; i < particles.length; i++) {
+          var particle = particles[i];
+
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+
+          if (particle.x < 0 || particle.x > canvasWidth) {
+            particle.vx *= -1;
+          }
+
+          if (particle.y < 0 || particle.y > canvasHeight) {
+            particle.vy *= -1;
+          }
+
+          ctx.beginPath();
+
+          ctx.arc(
+            particle.x,
+            particle.y,
+            particle.radius,
+            0,
+            Math.PI * 2
+          );
+
+          ctx.fillStyle =
+            "rgba(108, 99, 255, " + particle.alpha + ")";
+
+          ctx.fill();
+        }
+
+        var maxDistance = window.innerWidth <= 768 ? 75 : 110;
+
+        for (var a = 0; a < particles.length; a++) {
+          for (var b = a + 1; b < particles.length; b++) {
+            var dx = particles[a].x - particles[b].x;
+            var dy = particles[a].y - particles[b].y;
+            var distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < maxDistance) {
+              var opacity =
+                0.075 * (1 - distance / maxDistance);
+
+              ctx.beginPath();
+              ctx.moveTo(particles[a].x, particles[a].y);
+              ctx.lineTo(particles[b].x, particles[b].y);
+
+              ctx.strokeStyle =
+                "rgba(108, 99, 255, " + opacity + ")";
+
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+
+        animationFrame = window.requestAnimationFrame(
+          dibujarParticulas
+        );
+      }
+
+      function reiniciarCanvas() {
+        ajustarCanvas();
+        iniciarParticulas();
+      }
+
+      reiniciarCanvas();
+      dibujarParticulas();
+
+      window.addEventListener("resize", function () {
+        particleCount = window.innerWidth <= 768 ? 30 : 55;
+        reiniciarCanvas();
+      }, {
+        passive: true
+      });
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+          if (animationFrame !== null) {
+            window.cancelAnimationFrame(animationFrame);
+            animationFrame = null;
+          }
+        } else if (animationFrame === null) {
+          dibujarParticulas();
+        }
+      });
+    }
+  }
+
+
+  /* =======================================================
+     8. CONTADOR ANIMADO DEL HERO
+     ======================================================= */
+
+  var countElements = document.querySelectorAll("[data-count]");
+
+  function animarContador(element) {
+    var target = parseInt(element.getAttribute("data-count"), 10);
+
+    if (isNaN(target)) {
+      return;
+    }
+
+    if (reduceMotion) {
+      element.textContent = target;
+      return;
+    }
+
+    var duration = 1300;
+    var startTime = null;
+
+    function actualizarContador(timestamp) {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+
+      var progress = Math.min(
+        (timestamp - startTime) / duration,
+        1
+      );
+
+      var eased = 1 - Math.pow(1 - progress, 3);
+
+      element.textContent = Math.floor(target * eased);
+
+      if (progress < 1) {
+        window.requestAnimationFrame(actualizarContador);
+      } else {
+        element.textContent = target;
+      }
+    }
+
+    window.requestAnimationFrame(actualizarContador);
+  }
+
+  if ("IntersectionObserver" in window && countElements.length) {
+    var counterObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          animarContador(entry.target);
+          counterObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.5
+    });
+
+    countElements.forEach(function (element) {
+      counterObserver.observe(element);
+    });
+  } else {
+    countElements.forEach(function (element) {
+      animarContador(element);
+    });
+  }
+
+
+  /* =======================================================
+     9. BOTÓN FLOTANTE DE WHATSAPP
+     ======================================================= */
+
+  var waFloat = document.getElementById("wa-float");
+
+  if (waFloat) {
+    function mostrarWhatsApp() {
+      if (window.scrollY > 250) {
+        waFloat.classList.add("visible");
+      } else {
+        waFloat.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", mostrarWhatsApp, {
+      passive: true
+    });
+
+    mostrarWhatsApp();
+  }
+
+
+  /* =======================================================
+     10. ANIMACIONES DE ENTRADA
+     ======================================================= */
+
+  var revealElements = document.querySelectorAll(
+    ".service-card, .step, .portfolio-item, .price-card, " +
+    ".section-title, .section-sub, .contact-info, .contact-form"
+  );
+
+  if (reduceMotion || !("IntersectionObserver" in window)) {
+    revealElements.forEach(function (element) {
+      element.style.opacity = "1";
+      element.style.transform = "none";
+    });
+  } else {
+    revealElements.forEach(function (element) {
+      element.style.opacity = "0";
+      element.style.transform = "translateY(18px)";
+      element.style.transition =
+        "opacity 500ms ease, transform 500ms ease";
+    });
+
+    var revealObserver = new IntersectionObserver(
+      function (entries, observer) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          entry.target.style.opacity = "1";
+          entry.target.style.transform = "translateY(0)";
+
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -25px 0px"
+      }
+    );
+
+    revealElements.forEach(function (element) {
+      revealObserver.observe(element);
+    });
+  }
+
+
+  /* =======================================================
+     11. FORMULARIO: VALIDACIÓN
+     ======================================================= */
+
+  var form = document.getElementById("contact-form");
+  var submitButton = document.getElementById("btn-submit");
+  var statusElement = document.getElementById("form-status");
+
+  var fields = {
+    nombre: {
+      element: document.getElementById("nombre"),
+      error: document.getElementById("err-nombre"),
+      message: "Por favor, escribí tu nombre."
+    },
+    correo: {
+      element: document.getElementById("correo"),
+      error: document.getElementById("err-correo"),
+      message: "Ingresá un correo electrónico válido."
+    },
+    mensaje: {
+      element: document.getElementById("mensaje"),
+      error: document.getElementById("err-mensaje"),
+      message: "Escribí un mensaje antes de continuar."
+    }
+  };
+
+  function validarEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function limpiarError(field) {
+    if (!field.element) {
+      return;
+    }
+
+    if (field.error) {
+      field.error.textContent = "";
+    }
+
+    field.element.removeAttribute("aria-invalid");
+  }
+
+  function mostrarError(field, message) {
+    if (!field.element) {
+      return;
+    }
+
+    if (field.error) {
+      field.error.textContent = message || field.message;
+    }
+
+    field.element.setAttribute("aria-invalid", "true");
+  }
+
+  function validarCampo(key) {
+    var field = fields[key];
+
+    if (!field || !field.element) {
+      return true;
+    }
+
+    var value = field.element.value.trim();
+
+    if (!value) {
+      mostrarError(field);
+      return false;
+    }
+
+    if (key === "correo" && !validarEmail(value)) {
+      mostrarError(field, "Ingresá un correo electrónico válido.");
+      return false;
+    }
+
+    limpiarError(field);
+    return true;
+  }
+
+  Object.keys(fields).forEach(function (key) {
+    var field = fields[key];
+
+    if (!field.element) {
+      return;
+    }
+
+    field.element.addEventListener("blur", function () {
+      validarCampo(key);
+    });
+
+    field.element.addEventListener("input", function () {
+      if (
+        field.error &&
+        field.error.textContent.trim() !== ""
+      ) {
+        validarCampo(key);
+      }
+
+      if (statusElement) {
+        statusElement.textContent = "";
+      }
+    });
+  });
+
+
+  /* =======================================================
+     12. FORMULARIO: PREPARAR CORREO
+     ======================================================= */
+
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      var valid = true;
+
+      Object.keys(fields).forEach(function (key) {
+        if (!validarCampo(key)) {
+          valid = false;
+        }
+      });
+
+      if (!valid) {
+        if (statusElement) {
+          statusElement.textContent =
+            "Revisá los campos marcados antes de continuar.";
+
+          statusElement.style.color = "#FF6B6B";
+        }
+
+        var firstInvalid = form.querySelector(
+          '[aria-invalid="true"]'
+        );
+
+        if (firstInvalid) {
+          firstInvalid.focus();
+        }
+
+        return;
+      }
+
+      if (
+        !EMAIL_CONTACTO ||
+        EMAIL_CONTACTO === "tucorreo@email.com"
+      ) {
+        if (statusElement) {
+          statusElement.textContent =
+            "Configurá EMAIL_CONTACTO en script.js con tu correo real.";
+
+          statusElement.style.color = "#FF6B6B";
+        }
+
+        return;
+      }
+
+      var nombre = fields.nombre.element.value.trim();
+      var correo = fields.correo.element.value.trim();
+      var mensaje = fields.mensaje.element.value.trim();
+
+      var servicioElement = document.getElementById("servicio");
+      var servicio = servicioElement
+        ? servicioElement.value
         : "";
 
-      var asunto = encodeURIComponent("Contacto desde el sitio — " + nombre);
-      var cuerpo = encodeURIComponent(
-        "Nombre: "   + nombre  + "\n" +
-        "Correo: "   + correo  + "\n" +
+      var subject = encodeURIComponent(
+        "Consulta desde GF Digital — " + nombre
+      );
+
+      var body = encodeURIComponent(
+        "Nombre: " + nombre + "\n" +
+        "Correo: " + correo + "\n" +
         "Servicio: " + (servicio || "No especificado") + "\n\n" +
         "Mensaje:\n" + mensaje
       );
 
-      window.location.href =
-        "mailto:tucorreo@email.com?subject=" + asunto + "&body=" + cuerpo;
+      var mailtoUrl =
+        "mailto:" + EMAIL_CONTACTO +
+        "?subject=" + subject +
+        "&body=" + body;
 
-      setTimeout(function () {
-        statusEl.textContent  = "¡Listo! Se abrió tu cliente de correo para enviar el mensaje.";
-        statusEl.style.color  = "";
-        btnSubmit.disabled    = false;
-        btnSubmit.textContent = "Enviar mensaje";
-      }, 800);
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Abriendo correo...";
+      }
+
+      if (statusElement) {
+        statusElement.textContent =
+          "Intentando abrir tu aplicación de correo...";
+
+        statusElement.style.color = "";
+      }
+
+      // Abre la aplicación de correo del visitante.
+      window.location.href = mailtoUrl;
+
+      window.setTimeout(function () {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Enviar mensaje";
+        }
+
+        if (statusElement) {
+          statusElement.textContent =
+            "Si no se abrió tu correo, revisá la configuración de tu dispositivo.";
+        }
+      }, 1800);
     });
   }
-
-  /* -------------------------------------------------------
-     9. SMOOTH SCROLL con offset para el header fijo
-  ------------------------------------------------------- */
-  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-    anchor.addEventListener("click", function (e) {
-      var targetId = anchor.getAttribute("href");
-      if (targetId === "#") {
-        e.preventDefault();
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
-      }
-      var target = document.querySelector(targetId);
-      if (!target) return;
-      e.preventDefault();
-      var offset = 80;
-      var top    = target.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top: top, behavior: "smooth" });
-    });
-  });
 
 })();
